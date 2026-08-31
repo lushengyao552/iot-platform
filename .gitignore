@@ -1,0 +1,67 @@
+# ============================================================
+# Java / Maven / Spring Boot .gitignore
+# ============================================================
+
+# Maven 构建输出
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# Maven Wrapper（如果不希望提交 jar 可以取消注释）
+# .mvn/wrapper/maven-wrapper.jar
+
+# IDE 配置文件
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+*.swp
+*.swo
+*~
+
+# Eclipse
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# 日志文件
+*.log
+logs/
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 环境变量 / 敏感配置
+*.env
+*.env.local
+*.env.*.local
+application-local.yml
+application-dev.yml
+
+# 测试覆盖率
+.coverage
+*.exec
+jacoco.exec
+
+# 临时文件
+*.tmp
+*.bak
+*.old
