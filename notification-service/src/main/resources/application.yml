@@ -1,0 +1,40 @@
+# ============================================================
+# 通知微服务配置
+# ============================================================
+
+server:
+  port: 8081
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: notification-service
+
+  # RabbitMQ 配置（与主应用使用同一个 RabbitMQ 实例）
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    virtual-host: /
+    listener:
+      simple:
+        acknowledge-mode: manual
+        prefetch: 10
+        retry:
+          enabled: true
+          max-attempts: 3
+
+# 队列名称（必须与主应用中定义的一致）
+notification:
+  queue:
+    borrow-success: library.borrow.success.queue
+    return-success: library.return.success.queue
+
+logging:
+  level:
+    root: INFO
+    com.example.notification: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n"

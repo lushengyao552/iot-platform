@@ -14,6 +14,7 @@ import com.example.library.entity.BookCategory;
 import com.example.library.mapper.BookMapper;
 import com.example.library.service.BookCategoryService;
 import com.example.library.service.BookService;
+import com.example.library.util.RedisService;
 import com.example.library.vo.BookVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,8 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+
+import java.util.concurrent.TimeUnit;
 
 import java.util.Arrays;
 import java.util.List;
@@ -43,6 +46,12 @@ import java.util.stream.Collectors;
 public class BookServiceImpl extends ServiceImpl<BookMapper, Book> implements BookService {
 
     private final BookCategoryService categoryService;
+    private final RedisService redisService;
+
+    /** 图书详情缓存 key 前缀 */
+    private static final String BOOK_CACHE_PREFIX = "library:book:";
+    /** 缓存过期时间（分钟） */
+    private static final long CACHE_EXPIRE_MINUTES = 30;
 
     /** 允许排序的字段白名单（防止 SQL 注入） */
     private static final Set<String> ALLOWED_ORDER_FIELDS = Set.of(
@@ -125,11 +134,40 @@ public class BookServiceImpl extends ServiceImpl<BookMapper, Book> implements Bo
 
     @Override
     public BookVO getBookById(Long id) {
+        String cacheKey = BOOK_CACHE_PREFIX + id;
+
+        // 1. 先查缓存（缓存命中则直接返回，减少数据库压力）
+        BookVO cachedBook = redisService.get(cacheKey, BookVO.class);
+        if (cachedBook != null) {
+            log.debug("图书详情缓存命中, bookId={}", id);
+            return cachedBook;
+        }
+
+        // 2. 缓存未命中，查数据库
         Book book = getById(id);
         if (book == null) {
             throw new BusinessException(ResultCode.BOOK_NOT_FOUND);
         }
-        return toVO(book);
+
+        // 3. 转换为 VO 并写入缓存（设置过期时间，防止数据永久不一致）
+        BookVO bookVO = toVO(book);
+        redisService.set(cacheKey, bookVO, CACHE_EXPIRE_MINUTES, TimeUnit.MINUTES);
+        log.debug("图书详情写入缓存, bookId={}, expire={}分钟", id, CACHE_EXPIRE_MINUTES);
+
+        return bookVO;
+    }
+
+    /**
+     * 清除图书详情缓存（在新增、更新、删除时调用，保证缓存一致性）
+     */
+    private void evictBookCache(Long bookId) {
+        try {
+            redisService.delete(BOOK_CACHE_PREFIX + bookId);
+            log.debug("清除图书缓存, bookId={}", bookId);
+        } catch (Exception e) {
+            // 缓存清除失败不影响主业务
+            log.warn("清除图书缓存失败, bookId={}", bookId, e);
+        }
     }
 
     @Override
@@ -192,6 +230,9 @@ public class BookServiceImpl extends ServiceImpl<BookMapper, Book> implements Bo
         // 5. 执行更新
         updateById(book);
 
+        // 6. 清除缓存（保证缓存一致性，下次查询时重新加载）
+        evictBookCache(id);
+
         log.info("更新图书成功: bookId={}", id);
         return getBookById(id);
     }
@@ -205,6 +246,10 @@ public class BookServiceImpl extends ServiceImpl<BookMapper, Book> implements Bo
         }
         // 逻辑删除（MyBatis-Plus 自动处理 deleted 字段）
         removeById(id);
+
+        // 清除缓存
+        evictBookCache(id);
+
         log.info("删除图书成功: bookId={}", id);
     }
 

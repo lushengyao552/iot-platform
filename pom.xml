@@ -53,6 +53,13 @@
             <artifactId>spring-boot-starter-amqp</artifactId>
         </dependency>
 
+        <!-- ========== 缓存与分布式锁 ========== -->
+        <!-- Redis：内存数据库，用于缓存、分布式锁、会话管理、排行榜等 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
         <!-- ========== 数据持久层 ========== -->
         <!-- MySQL 驱动 -->
         <dependency>
