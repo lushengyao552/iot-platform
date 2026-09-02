@@ -20,8 +20,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/library_db?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
     username: root
-    # TODO: 请修改为你的 MySQL root 密码
-    password: root123
+    password: ll521521
     hikari:
       maximum-pool-size: 10
       minimum-idle: 5

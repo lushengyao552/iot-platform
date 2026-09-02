@@ -47,7 +47,11 @@ public class RedisService {
      * 设置缓存（永不过期）
      */
     public void set(String key, Object value) {
-        redisTemplate.opsForValue().set(key, value);
+        try {
+            redisTemplate.opsForValue().set(key, value);
+        } catch (Exception e) {
+            log.warn("Redis set 失败（降级处理）, key={}", key, e);
+        }
     }
 
     /**
@@ -59,14 +63,23 @@ public class RedisService {
      * @param unit    时间单位
      */
     public void set(String key, Object value, long timeout, TimeUnit unit) {
-        redisTemplate.opsForValue().set(key, value, timeout, unit);
+        try {
+            redisTemplate.opsForValue().set(key, value, timeout, unit);
+        } catch (Exception e) {
+            log.warn("Redis set 失败（降级处理）, key={}", key, e);
+        }
     }
 
     /**
      * 获取缓存
      */
     public Object get(String key) {
-        return redisTemplate.opsForValue().get(key);
+        try {
+            return redisTemplate.opsForValue().get(key);
+        } catch (Exception e) {
+            log.warn("Redis get 失败（降级处理）, key={}", key, e);
+            return null;
+        }
     }
 
     /**
@@ -74,32 +87,46 @@ public class RedisService {
      */
     @SuppressWarnings("unchecked")
     public <T> T get(String key, Class<T> clazz) {
-        Object value = redisTemplate.opsForValue().get(key);
-        if (value == null) {
+        try {
+            Object value = redisTemplate.opsForValue().get(key);
+            if (value == null) {
+                return null;
+            }
+            return (T) value;
+        } catch (Exception e) {
+            log.warn("Redis get 失败（降级处理）, key={}", key, e);
             return null;
         }
-        return (T) value;
     }
 
     /**
      * 删除缓存
      */
     public Boolean delete(String key) {
-        return redisTemplate.delete(key);
+        try {
+            return redisTemplate.delete(key);
+        } catch (Exception e) {
+            log.warn("Redis delete 失败（降级处理）, key={}", key, e);
+            return false;
+        }
     }
 
-    /**
-     * 判断 key 是否存在
-     */
     public Boolean hasKey(String key) {
-        return redisTemplate.hasKey(key);
+        try {
+            return redisTemplate.hasKey(key);
+        } catch (Exception e) {
+            log.warn("Redis hasKey 失败（降级处理）, key={}", key, e);
+            return false;
+        }
     }
 
-    /**
-     * 设置过期时间
-     */
     public Boolean expire(String key, long timeout, TimeUnit unit) {
-        return redisTemplate.expire(key, timeout, unit);
+        try {
+            return redisTemplate.expire(key, timeout, unit);
+        } catch (Exception e) {
+            log.warn("Redis expire 失败（降级处理）, key={}", key, e);
+            return false;
+        }
     }
 
     // ============================================================
@@ -167,13 +194,20 @@ public class RedisService {
      * @return 递增后的值
      */
     public Long increment(String key, long delta) {
-        return redisTemplate.opsForValue().increment(key, delta);
+        try {
+            return redisTemplate.opsForValue().increment(key, delta);
+        } catch (Exception e) {
+            log.warn("Redis increment 失败（降级处理）, key={}", key, e);
+            return null;
+        }
     }
 
-    /**
-     * 原子递减
-     */
     public Long decrement(String key, long delta) {
-        return redisTemplate.opsForValue().decrement(key, delta);
+        try {
+            return redisTemplate.opsForValue().decrement(key, delta);
+        } catch (Exception e) {
+            log.warn("Redis decrement 失败（降级处理）, key={}", key, e);
+            return null;
+        }
     }
 }

@@ -146,8 +146,10 @@ public class MessageProducer {
             // 发送消息
             rabbitTemplate.send(exchange, routingKey, message, correlationData);
         } catch (Exception e) {
-            log.error("发送消息失败, exchange={}, routingKey={}", exchange, routingKey, e);
-            throw new RuntimeException("消息发送失败", e);
+            // 暂时降级：RabbitMQ 不可用时只记录日志，不影响主业务流程
+            // 有网络启用 RabbitMQ 后，取消下面的 throw 注释即可恢复正常
+            log.warn("发送消息失败（降级处理，不影响主业务）, exchange={}, routingKey={}", exchange, routingKey, e);
+            // throw new RuntimeException("消息发送失败", e);
         }
     }
 

@@ -20,10 +20,10 @@ services:
     container_name: library-mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_ROOT_PASSWORD: ll521521
       MYSQL_DATABASE: library_db
       MYSQL_USER: library
-      MYSQL_PASSWORD: library123
+      MYSQL_PASSWORD: ll521521
       TZ: Asia/Shanghai
     ports:
       - "3306:3306"
@@ -36,7 +36,7 @@ services:
       - --collation-server=utf8mb4_unicode_ci
       - --default-authentication-plugin=mysql_native_password
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot123"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-pll521521"]
       interval: 10s
       timeout: 5s
       retries: 5

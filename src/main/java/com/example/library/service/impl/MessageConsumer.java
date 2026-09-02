@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
  * </ul>
  */
 @Slf4j
-@Component
+// @Component  // 暂时禁用：没有 RabbitMQ 时不启动消费者，有网络后取消注释即可启用
 @RequiredArgsConstructor
 public class MessageConsumer {
 

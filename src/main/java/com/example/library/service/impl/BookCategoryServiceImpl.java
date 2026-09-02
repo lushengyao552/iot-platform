@@ -7,8 +7,8 @@ import com.example.library.common.result.ResultCode;
 import com.example.library.entity.Book;
 import com.example.library.entity.BookCategory;
 import com.example.library.mapper.BookCategoryMapper;
+import com.example.library.mapper.BookMapper;
 import com.example.library.service.BookCategoryService;
-import com.example.library.service.BookService;
 import com.example.library.vo.CategoryVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +28,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class BookCategoryServiceImpl extends ServiceImpl<BookCategoryMapper, BookCategory> implements BookCategoryService {
 
-    private final BookService bookService;
+    // 直接注入 BookMapper 而不是 BookService，避免循环依赖
+    private final BookMapper bookMapper;
 
     @Override
     public List<CategoryVO> listAllCategories() {
@@ -86,8 +87,8 @@ public class BookCategoryServiceImpl extends ServiceImpl<BookCategoryMapper, Boo
         // 检查该分类下是否有图书
         LambdaQueryWrapper<Book> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Book::getCategoryId, id);
-        long bookCount = bookService.count(wrapper);
-        if (bookCount > 0) {
+        Long bookCount = bookMapper.selectCount(wrapper);
+        if (bookCount != null && bookCount > 0) {
             throw new BusinessException(ResultCode.PARAM_ERROR.getCode(),
                     "该分类下存在 " + bookCount + " 本图书，无法删除");
         }
@@ -121,7 +122,8 @@ public class BookCategoryServiceImpl extends ServiceImpl<BookCategoryMapper, Boo
         // 统计该分类下的图书数量
         LambdaQueryWrapper<Book> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Book::getCategoryId, category.getId());
-        vo.setBookCount((int) bookService.count(wrapper));
+        Long count = bookMapper.selectCount(wrapper);
+        vo.setBookCount(count != null ? count.intValue() : 0);
 
         return vo;
     }

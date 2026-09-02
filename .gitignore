@@ -65,3 +65,7 @@ jacoco.exec
 *.tmp
 *.bak
 *.old
+
+# Gradle 构建缓存
+.gradle/
+.gradle
