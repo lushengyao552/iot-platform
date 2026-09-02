@@ -28,36 +28,26 @@
 
 ```
 library-management/
-├── backend/                            # 后端（Spring Boot）
-│   ├── src/main/java/com/example/library/
-│   │   ├── LibraryApplication.java     # 启动类
-│   │   ├── common/
-│   │   │   ├── result/                 # 统一响应封装 (Result, ResultCode)
-│   │   │   ├── exception/              # 全局异常处理 (BusinessException, GlobalExceptionHandler)
-│   │   │   └── constant/               # 常量定义
-│   │   ├── config/                     # 配置类 (Redis, RabbitMQ, Knife4j, MyBatisPlus, WebMvc)
-│   │   ├── controller/                 # 控制器层 (Auth, Book, Borrow, Category, User)
-│   │   ├── dto/                        # 数据传输对象 (请求参数)
-│   │   ├── entity/                     # 实体类 (User, Book, Borrow, BookCategory, NotificationMessage, OperationLogMessage)
-│   │   ├── interceptor/                # JWT 认证拦截器
-│   │   ├── mapper/                     # MyBatis Mapper 接口
-│   │   ├── service/                    # 服务层接口
-│   │   │   └── impl/                   # 服务层实现
-│   │   ├── util/                       # 工具类 (JwtUtil, RedisService, MessageProducer)
-│   │   └── vo/                         # 视图对象 (响应数据)
-│   ├── src/main/resources/
-│   │   ├── application.yml             # 主配置文件
-│   │   └── db/schema.sql               # 数据库初始化脚本
-│   ├── notification-service/           # 通知微服务（RabbitMQ 消费者）
-│   ├── pom.xml                         # Maven 构建
-│   └── build.gradle / settings.gradle  # Gradle 构建
-├── frontend/                           # 前端（React 18 + Vite + TS）
-│   ├── src/
-│   ├── package.json
-│   └── vite.config.ts
-├── docs/                               # 学习文档
-├── 学习笔记/                           # 学习笔记
-└── docker-compose.yml                  # 中间件编排（MySQL/Redis/RabbitMQ）
+├── src/main/java/com/example/library/
+│   ├── LibraryApplication.java          # 启动类
+│   ├── common/
+│   │   ├── result/                       # 统一响应封装 (Result, ResultCode)
+│   │   ├── exception/                    # 全局异常处理 (BusinessException, GlobalExceptionHandler)
+│   │   └── constant/                     # 常量定义
+│   ├── config/                           # 配置类 (Redis, RabbitMQ, Knife4j, MyBatisPlus, WebMvc)
+│   ├── controller/                       # 控制器层 (Auth, Book, Borrow, Category, User)
+│   ├── dto/                              # 数据传输对象 (请求参数)
+│   ├── entity/                           # 实体类 (User, Book, Borrow, BookCategory, NotificationMessage, OperationLogMessage)
+│   ├── interceptor/                      # JWT 认证拦截器
+│   ├── mapper/                           # MyBatis Mapper 接口
+│   ├── service/                          # 服务层接口
+│   │   └── impl/                         # 服务层实现
+│   ├── util/                             # 工具类 (JwtUtil, RedisService, MessageProducer)
+│   └── vo/                               # 视图对象 (响应数据)
+├── src/main/resources/
+│   ├── application.yml                    # 主配置文件
+│   └── db/schema.sql                     # 数据库初始化脚本
+└── pom.xml
 ```
 
 ## 核心模块
@@ -103,17 +93,11 @@ library-management/
 
 ### 后端
 ```bash
-cd backend
-
 # 编译
 mvn clean compile
-# 或
-./gradlew build -x test
 
 # 启动
 mvn spring-boot:run
-# 或
-./gradlew bootRun
 
 # 打包
 mvn clean package -DskipTests
@@ -121,8 +105,6 @@ mvn clean package -DskipTests
 
 ### 前端
 ```bash
-cd frontend
-
 # 安装依赖
 npm install
 
