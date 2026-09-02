@@ -5,7 +5,7 @@
 #   1. 安装 Docker Desktop
 #   2. 在项目根目录执行: docker-compose up -d
 #   3. 等待所有服务启动完成（约 30-60 秒）
-#   4. 启动应用: .\mvnw.cmd spring-boot:run
+#   4. 启动应用: .\backend\mvnw.cmd spring-boot:run
 #   5. 停止服务: docker-compose down
 # ============================================================
 
@@ -30,7 +30,7 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
       # 自动执行初始化脚本（首次启动时）
-      - ./src/main/resources/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./backend/src/main/resources/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
@@ -91,7 +91,7 @@ services:
   # 可选：通知微服务（独立部署，通过 RabbitMQ 消费消息）
   # ============================================================
   # notification-service:
-  #   build: ./notification-service
+  #   build: ./backend/notification-service
   #   container_name: library-notification
   #   restart: unless-stopped
   #   depends_on:

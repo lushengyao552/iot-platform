@@ -3,7 +3,7 @@
 # ============================================================
 
 # Maven 构建输出
-target/
+**/target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
@@ -16,7 +16,7 @@ target/
 *.iws
 *.iml
 *.ipr
-.vscode/
+**/.vscode/
 *.swp
 *.swo
 *~
@@ -36,7 +36,7 @@ target/
 /dist/
 /nbdist/
 /.nb-gradle/
-build/
+**/build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
@@ -67,5 +67,5 @@ jacoco.exec
 *.old
 
 # Gradle 构建缓存
-.gradle/
-.gradle
+**/.gradle/
+**/.gradle

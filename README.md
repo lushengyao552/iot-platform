@@ -48,75 +48,88 @@
 ## 三、项目结构
 
 ```
-library-management/
-├── mvnw / mvnw.cmd              # Maven Wrapper 脚本
-├── .mvn/wrapper/                 # Maven Wrapper 配置
-├── pom.xml                        # Maven 依赖管理
-├── src/
-│   ├── main/
-│   │   ├── java/com/example/library/
-│   │   │   ├── LibraryApplication.java       # 启动类
-│   │   │   ├── common/                        # 通用组件
-│   │   │   │   ├── config/                    # 配置类
-│   │   │   │   │   ├── MyBatisPlusConfig.java    # MyBatis-Plus 配置（分页插件）
-│   │   │   │   │   ├── WebMvcConfig.java         # Web 配置（拦截器、跨域）
-│   │   │   │   │   └── MyMetaObjectHandler.java  # 自动填充处理器
-│   │   │   │   ├── exception/                 # 异常处理
-│   │   │   │   │   ├── BusinessException.java     # 业务异常
-│   │   │   │   │   └── GlobalExceptionHandler.java # 全局异常处理器
-│   │   │   │   └── result/                    # 统一响应
-│   │   │   │       ├── Result.java                # 统一响应封装
-│   │   │   │       └── ResultCode.java            # 状态码枚举
-│   │   │   ├── controller/                    # 控制层（接收请求）
-│   │   │   │   ├── AuthController.java
-│   │   │   │   ├── UserController.java
-│   │   │   │   ├── BookController.java
-│   │   │   │   ├── BookCategoryController.java
-│   │   │   │   └── BorrowController.java
-│   │   │   ├── service/                       # 业务层（业务逻辑）
-│   │   │   │   ├── UserService.java
-│   │   │   │   ├── BookService.java
-│   │   │   │   ├── BookCategoryService.java
-│   │   │   │   ├── BorrowService.java
-│   │   │   │   └── impl/                      # 业务实现
-│   │   │   ├── mapper/                        # 数据访问层
-│   │   │   │   ├── UserMapper.java
-│   │   │   │   ├── BookMapper.java
-│   │   │   │   ├── BookCategoryMapper.java
-│   │   │   │   └── BorrowRecordMapper.java
-│   │   │   ├── entity/                        # 实体类（对应数据库表）
-│   │   │   │   ├── User.java
-│   │   │   │   ├── Book.java
-│   │   │   │   ├── BookCategory.java
-│   │   │   │   └── BorrowRecord.java
-│   │   │   ├── dto/                           # 数据传输对象（接收请求参数）
-│   │   │   │   ├── LoginDTO.java
-│   │   │   │   ├── RegisterDTO.java
-│   │   │   │   ├── BookQueryDTO.java
-│   │   │   │   ├── BookAddDTO.java
-│   │   │   │   └── BookUpdateDTO.java
-│   │   │   ├── vo/                            # 视图对象（返回前端数据）
-│   │   │   │   ├── LoginVO.java
-│   │   │   │   ├── UserVO.java
-│   │   │   │   ├── BookVO.java
-│   │   │   │   ├── CategoryVO.java
-│   │   │   │   └── BorrowRecordVO.java
-│   │   │   ├── interceptor/                   # 拦截器
-│   │   │   │   └── JwtInterceptor.java
-│   │   │   └── util/                          # 工具类
-│   │   │       ├── JwtUtil.java
-│   │   │       └── UserContext.java
-│   │   └── resources/
-│   │       ├── application.yml                 # 应用配置
-│   │       ├── mapper/                         # MyBatis XML 映射文件
-│   │       └── db/
-│   │           └── schema.sql                   # 数据库初始化脚本
-│   └── test/                                    # 测试代码
-│       └── java/com/example/library/
-│           ├── LibraryApplicationTests.java
-│           └── service/
-│               ├── UserServiceTest.java
-│               └── BorrowServiceTest.java
+library-management/                 # 前后端一体仓库
+├── backend/                        # 后端（Spring Boot + MyBatis-Plus）
+│   ├── mvnw / mvnw.cmd             # Maven Wrapper 脚本
+│   ├── gradlew / gradlew.bat       # Gradle Wrapper 脚本
+│   ├── .mvn/wrapper/               # Maven Wrapper 配置
+│   ├── gradle/                     # Gradle Wrapper 配置
+│   ├── pom.xml                     # Maven 依赖管理
+│   ├── build.gradle / settings.gradle  # Gradle 构建配置
+│   ├── notification-service/       # 通知微服务（RabbitMQ 消费者）
+│   ├── src/
+│   │   ├── main/
+│   │   │   ├── java/com/example/library/
+│   │   │   │   ├── LibraryApplication.java       # 启动类
+│   │   │   │   ├── common/                        # 通用组件
+│   │   │   │   │   ├── config/                    # 配置类
+│   │   │   │   │   │   ├── MyBatisPlusConfig.java    # MyBatis-Plus 配置（分页插件）
+│   │   │   │   │   │   ├── WebMvcConfig.java         # Web 配置（拦截器、跨域）
+│   │   │   │   │   │   └── MyMetaObjectHandler.java  # 自动填充处理器
+│   │   │   │   │   ├── exception/                 # 异常处理
+│   │   │   │   │   │   ├── BusinessException.java     # 业务异常
+│   │   │   │   │   │   └── GlobalExceptionHandler.java # 全局异常处理器
+│   │   │   │   │   └── result/                    # 统一响应
+│   │   │   │   │       ├── Result.java                # 统一响应封装
+│   │   │   │   │       └── ResultCode.java            # 状态码枚举
+│   │   │   │   ├── controller/                    # 控制层（接收请求）
+│   │   │   │   │   ├── AuthController.java
+│   │   │   │   │   ├── UserController.java
+│   │   │   │   │   ├── BookController.java
+│   │   │   │   │   ├── BookCategoryController.java
+│   │   │   │   │   └── BorrowController.java
+│   │   │   │   ├── service/                       # 业务层（业务逻辑）
+│   │   │   │   │   ├── UserService.java
+│   │   │   │   │   ├── BookService.java
+│   │   │   │   │   ├── BookCategoryService.java
+│   │   │   │   │   ├── BorrowService.java
+│   │   │   │   │   └── impl/                      # 业务实现
+│   │   │   │   ├── mapper/                        # 数据访问层
+│   │   │   │   │   ├── UserMapper.java
+│   │   │   │   │   ├── BookMapper.java
+│   │   │   │   │   ├── BookCategoryMapper.java
+│   │   │   │   │   └── BorrowRecordMapper.java
+│   │   │   │   ├── entity/                        # 实体类（对应数据库表）
+│   │   │   │   │   ├── User.java
+│   │   │   │   │   ├── Book.java
+│   │   │   │   │   ├── BookCategory.java
+│   │   │   │   │   └── BorrowRecord.java
+│   │   │   │   ├── dto/                           # 数据传输对象（接收请求参数）
+│   │   │   │   │   ├── LoginDTO.java
+│   │   │   │   │   ├── RegisterDTO.java
+│   │   │   │   │   ├── BookQueryDTO.java
+│   │   │   │   │   ├── BookAddDTO.java
+│   │   │   │   │   └── BookUpdateDTO.java
+│   │   │   │   ├── vo/                            # 视图对象（返回前端数据）
+│   │   │   │   │   ├── LoginVO.java
+│   │   │   │   │   ├── UserVO.java
+│   │   │   │   │   ├── BookVO.java
+│   │   │   │   │   ├── CategoryVO.java
+│   │   │   │   │   └── BorrowRecordVO.java
+│   │   │   │   ├── interceptor/                   # 拦截器
+│   │   │   │   │   └── JwtInterceptor.java
+│   │   │   │   └── util/                          # 工具类
+│   │   │   │       ├── JwtUtil.java
+│   │   │   │       └── UserContext.java
+│   │   │   └── resources/
+│   │   │       ├── application.yml                 # 应用配置
+│   │   │       ├── mapper/                         # MyBatis XML 映射文件
+│   │   │       └── db/
+│   │   │           └── schema.sql                   # 数据库初始化脚本
+│   │   └── test/                                    # 测试代码
+│   │       └── java/com/example/library/
+│   │           ├── LibraryApplicationTests.java
+│   │           └── service/
+│   │               ├── UserServiceTest.java
+│   │               └── BorrowServiceTest.java
+├── frontend/                       # 前端（React 18 + Vite + TS）
+│   ├── src/                        # 页面、组件、API、路由、状态管理
+│   ├── package.json
+│   ├── vite.config.ts
+│   └── ...
+├── docs/                           # 学习文档
+├── 学习笔记/                       # 学习笔记
+├── docker-compose.yml              # 中间件编排（MySQL/Redis/RabbitMQ）
 └── README.md
 ```
 
@@ -125,34 +138,37 @@ library-management/
 ### 4.1 环境准备
 
 - **JDK 17+**（已确认安装）
-- **MySQL 8.0+**（已确认安装，需启动服务）
-- **Maven**：无需安装，项目使用 Maven Wrapper
+- **MySQL 8.0+**（推荐通过 docker-compose 启动）
+- **Maven / Gradle**：无需安装，项目自带 Wrapper
 
-### 4.2 启动 MySQL 服务
+### 4.2 启动 MySQL / Redis / RabbitMQ
 
 ```powershell
-# 以管理员身份运行 PowerShell
-Start-Service -Name MySQL80
+# 在项目根目录启动三个中间件
+docker-compose up -d
 ```
 
 ### 4.3 初始化数据库
 
+Docker Compose 首次启动时会自动执行 `backend/src/main/resources/db/schema.sql` 初始化数据库。
+
+如需手动初始化：
 ```powershell
 # 登录 MySQL（输入你的 root 密码）
 mysql -u root -p
 
 # 执行初始化脚本
-source C:/path/to/library-management/src/main/resources/db/schema.sql
+source C:/path/to/library-management/backend/src/main/resources/db/schema.sql
 ```
 
 或者直接在命令行执行：
 ```powershell
-mysql -u root -p < src/main/resources/db/schema.sql
+mysql -u root -p < backend/src/main/resources/db/schema.sql
 ```
 
 ### 4.4 修改数据库配置
 
-编辑 `src/main/resources/application.yml`，修改数据库密码：
+编辑 `backend/src/main/resources/application.yml`，修改数据库密码：
 
 ```yaml
 spring:
@@ -165,10 +181,12 @@ spring:
 
 ```powershell
 # 进入项目目录
-cd library-management
+cd library-management\backend
 
 # 使用 Maven Wrapper 编译并运行（首次会自动下载 Maven 和依赖）
 .\mvnw.cmd spring-boot:run
+# 或使用 Gradle Wrapper
+.\gradlew.bat bootRun
 ```
 
 启动成功后访问：
@@ -178,6 +196,8 @@ cd library-management
 ### 4.6 运行测试
 
 ```powershell
+cd library-management\backend
+
 # 运行所有单元测试
 .\mvnw.cmd test
 
