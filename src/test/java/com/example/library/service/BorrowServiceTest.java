@@ -5,9 +5,10 @@ import com.example.library.common.result.ResultCode;
 import com.example.library.entity.Book;
 import com.example.library.entity.BorrowRecord;
 import com.example.library.entity.User;
-import com.example.library.mapper.BookMapper;
-import com.example.library.mapper.BorrowRecordMapper;
+import com.example.library.repository.BorrowRecordRepository;
 import com.example.library.service.impl.BorrowServiceImpl;
+import com.example.library.util.MessageProducer;
+import com.example.library.util.RedisService;
 import com.example.library.vo.BorrowRecordVO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -20,6 +21,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -35,16 +37,19 @@ import static org.mockito.Mockito.*;
 class BorrowServiceTest {
 
     @Mock
-    private BorrowRecordMapper borrowRecordMapper;
-
-    @Mock
-    private BookMapper bookMapper;
+    private BorrowRecordRepository borrowRecordRepository;
 
     @Mock
     private BookService bookService;
 
     @Mock
     private UserService userService;
+
+    @Mock
+    private RedisService redisService;
+
+    @Mock
+    private MessageProducer messageProducer;
 
     @InjectMocks
     private BorrowServiceImpl borrowService;
@@ -83,8 +88,9 @@ class BorrowServiceTest {
         ReflectionTestUtils.setField(borrowService, "maxBorrowDays", 30);
         ReflectionTestUtils.setField(borrowService, "maxBorrowCount", 5);
 
-        // 注入 ServiceImpl 基类的 baseMapper 字段
-        ReflectionTestUtils.setField(borrowService, "baseMapper", borrowRecordMapper);
+        // mock 分布式锁：默认获取锁成功（避免 borrowBook 中 redisService 未 mock 导致 NPE）
+        lenient().when(redisService.tryLock(anyString(), anyString(), anyLong(), any(TimeUnit.class)))
+                .thenReturn(true);
     }
 
     @Test
@@ -93,15 +99,15 @@ class BorrowServiceTest {
         // Given
         when(userService.getById(1L)).thenReturn(testUser);
         when(bookService.getById(1L)).thenReturn(testBook);
-        when(borrowRecordMapper.countByUserAndBook(1L, 1L)).thenReturn(0);
-        when(borrowRecordMapper.countBorrowingByUserId(1L)).thenReturn(2);
+        when(borrowRecordRepository.countByUserAndBook(1L, 1L)).thenReturn(0);
+        when(borrowRecordRepository.countBorrowingByUserId(1L)).thenReturn(2);
 
-        when(bookMapper.decreaseStock(1L, 1)).thenReturn(1);
+        when(bookService.decreaseStock(1L, 1)).thenReturn(1);
 
-        when(borrowRecordMapper.insert(any(BorrowRecord.class))).thenAnswer(invocation -> {
+        when(borrowRecordRepository.save(any(BorrowRecord.class))).thenAnswer(invocation -> {
             BorrowRecord record = invocation.getArgument(0);
             record.setId(100L);
-            return 1;
+            return true;
         });
 
         // When
@@ -119,8 +125,8 @@ class BorrowServiceTest {
         assertFalse(result.getOverdue());
         assertTrue(result.getRemainingDays() >= 29);
 
-        verify(bookMapper, times(1)).decreaseStock(1L, 1);
-        verify(borrowRecordMapper, times(1)).insert(any(BorrowRecord.class));
+        verify(bookService, times(1)).decreaseStock(1L, 1);
+        verify(borrowRecordRepository, times(1)).save(any(BorrowRecord.class));
     }
 
     @Test
@@ -168,7 +174,7 @@ class BorrowServiceTest {
         // Given
         when(userService.getById(1L)).thenReturn(testUser);
         when(bookService.getById(1L)).thenReturn(testBook);
-        when(borrowRecordMapper.countByUserAndBook(1L, 1L)).thenReturn(1);
+        when(borrowRecordRepository.countByUserAndBook(1L, 1L)).thenReturn(1);
 
         // When & Then
         BusinessException exception = assertThrows(BusinessException.class,
@@ -182,8 +188,8 @@ class BorrowServiceTest {
         // Given
         when(userService.getById(1L)).thenReturn(testUser);
         when(bookService.getById(1L)).thenReturn(testBook);
-        when(borrowRecordMapper.countByUserAndBook(1L, 1L)).thenReturn(0);
-        when(borrowRecordMapper.countBorrowingByUserId(1L)).thenReturn(5);
+        when(borrowRecordRepository.countByUserAndBook(1L, 1L)).thenReturn(0);
+        when(borrowRecordRepository.countBorrowingByUserId(1L)).thenReturn(5);
 
         // When & Then
         BusinessException exception = assertThrows(BusinessException.class,
@@ -195,11 +201,11 @@ class BorrowServiceTest {
     @DisplayName("归还成功 - 正常归还（无逾期）")
     void returnBook_Success_NoOverdue() {
         // Given
-        when(borrowRecordMapper.selectById(1L)).thenReturn(testRecord);
+        when(borrowRecordRepository.getById(1L)).thenReturn(testRecord);
 
-        when(bookMapper.increaseStock(1L, 1)).thenReturn(1);
+        when(bookService.increaseStock(1L, 1)).thenReturn(1);
 
-        when(borrowRecordMapper.updateById(any(BorrowRecord.class))).thenReturn(1);
+        when(borrowRecordRepository.updateById(any(BorrowRecord.class))).thenReturn(true);
         when(userService.getById(1L)).thenReturn(testUser);
         when(bookService.getById(1L)).thenReturn(testBook);
 
@@ -213,8 +219,8 @@ class BorrowServiceTest {
         assertEquals(0, result.getFine().compareTo(BigDecimal.ZERO));
         assertFalse(result.getOverdue());
 
-        verify(bookMapper, times(1)).increaseStock(1L, 1);
-        verify(borrowRecordMapper, times(1)).updateById(any(BorrowRecord.class));
+        verify(bookService, times(1)).increaseStock(1L, 1);
+        verify(borrowRecordRepository, times(1)).updateById(any(BorrowRecord.class));
     }
 
     @Test
@@ -224,11 +230,11 @@ class BorrowServiceTest {
         testRecord.setBorrowDate(LocalDate.now().minusDays(40));
         testRecord.setDueDate(LocalDate.now().minusDays(10));
 
-        when(borrowRecordMapper.selectById(1L)).thenReturn(testRecord);
+        when(borrowRecordRepository.getById(1L)).thenReturn(testRecord);
 
-        when(bookMapper.increaseStock(1L, 1)).thenReturn(1);
+        when(bookService.increaseStock(1L, 1)).thenReturn(1);
 
-        when(borrowRecordMapper.updateById(any(BorrowRecord.class))).thenReturn(1);
+        when(borrowRecordRepository.updateById(any(BorrowRecord.class))).thenReturn(true);
         when(userService.getById(1L)).thenReturn(testUser);
         when(bookService.getById(1L)).thenReturn(testBook);
 
@@ -247,7 +253,7 @@ class BorrowServiceTest {
     @DisplayName("归还失败 - 借阅记录不存在")
     void returnBook_RecordNotFound() {
         // Given
-        when(borrowRecordMapper.selectById(99L)).thenReturn(null);
+        when(borrowRecordRepository.getById(99L)).thenReturn(null);
 
         // When & Then
         BusinessException exception = assertThrows(BusinessException.class,
@@ -260,7 +266,7 @@ class BorrowServiceTest {
     void returnBook_AlreadyReturned() {
         // Given
         testRecord.setStatus("RETURNED");
-        when(borrowRecordMapper.selectById(1L)).thenReturn(testRecord);
+        when(borrowRecordRepository.getById(1L)).thenReturn(testRecord);
 
         // When & Then
         BusinessException exception = assertThrows(BusinessException.class,

@@ -2,13 +2,12 @@ package com.example.library.service.impl;
 
 import cn.hutool.crypto.digest.BCrypt;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.library.common.exception.BusinessException;
 import com.example.library.common.result.ResultCode;
 import com.example.library.dto.LoginDTO;
 import com.example.library.dto.RegisterDTO;
 import com.example.library.entity.User;
-import com.example.library.mapper.UserMapper;
+import com.example.library.repository.UserRepository;
 import com.example.library.service.UserService;
 import com.example.library.util.JwtUtil;
 import com.example.library.vo.LoginVO;
@@ -34,8 +33,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
+public class UserServiceImpl implements UserService {
 
+    private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
 
     @Value("${library.jwt.expiration}")
@@ -97,7 +97,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         user.setStatus(1);     // 默认正常状态
 
         // 5. 保存用户
-        save(user);
+        userRepository.save(user);
 
         log.info("用户注册成功: userId={}, username={}", user.getId(), user.getUsername());
 
@@ -108,7 +108,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     public User getByUsername(String username) {
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(User::getUsername, username);
-        return getOne(wrapper);
+        return userRepository.getOne(wrapper);
+    }
+
+    @Override
+    public User getById(Long id) {
+        return userRepository.getById(id);
     }
 
     @Override

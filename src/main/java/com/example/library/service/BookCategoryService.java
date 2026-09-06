@@ -1,6 +1,5 @@
 package com.example.library.service;
 
-import com.baomidou.mybatisplus.extension.service.IService;
 import com.example.library.entity.BookCategory;
 import com.example.library.vo.CategoryVO;
 
@@ -9,7 +8,7 @@ import java.util.List;
 /**
  * 图书分类服务接口
  */
-public interface BookCategoryService extends IService<BookCategory> {
+public interface BookCategoryService {
 
     /**
      * 查询所有分类（按排序号排序）
@@ -40,6 +39,14 @@ public interface BookCategoryService extends IService<BookCategory> {
      * @param id 分类ID
      */
     void deleteCategory(Long id);
+
+    /**
+     * 根据ID查询分类实体（供控制器和其他服务调用）
+     *
+     * @param id 分类ID
+     * @return 分类实体
+     */
+    BookCategory getById(Long id);
 
     /**
      * 转换为 VO

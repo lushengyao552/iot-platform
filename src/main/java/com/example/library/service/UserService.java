@@ -1,6 +1,5 @@
 package com.example.library.service;
 
-import com.baomidou.mybatisplus.extension.service.IService;
 import com.example.library.dto.LoginDTO;
 import com.example.library.dto.RegisterDTO;
 import com.example.library.entity.User;
@@ -9,10 +8,8 @@ import com.example.library.vo.UserVO;
 
 /**
  * 用户服务接口
- *
- * <p>继承 IService<User> 获得 MyBatis-Plus 提供的通用 Service 方法
  */
-public interface UserService extends IService<User> {
+public interface UserService {
 
     /**
      * 用户登录
@@ -37,6 +34,14 @@ public interface UserService extends IService<User> {
      * @return 用户实体
      */
     User getByUsername(String username);
+
+    /**
+     * 根据ID查询用户（供控制器调用）
+     *
+     * @param id 用户ID
+     * @return 用户实体
+     */
+    User getById(Long id);
 
     /**
      * 转换为 VO（去除敏感字段）

@@ -1,7 +1,6 @@
 package com.example.library.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.service.IService;
 import com.example.library.dto.BookAddDTO;
 import com.example.library.dto.BookQueryDTO;
 import com.example.library.dto.BookUpdateDTO;
@@ -11,7 +10,7 @@ import com.example.library.vo.BookVO;
 /**
  * 图书服务接口
  */
-public interface BookService extends IService<Book> {
+public interface BookService {
 
     /**
      * 分页查询图书
@@ -52,6 +51,32 @@ public interface BookService extends IService<Book> {
      * @param id 图书ID
      */
     void deleteBook(Long id);
+
+    /**
+     * 根据ID查询图书实体（供其他服务调用）
+     *
+     * @param id 图书ID
+     * @return 图书实体
+     */
+    Book getById(Long id);
+
+    /**
+     * 扣减库存（原子操作，防止超卖）
+     *
+     * @param bookId 图书ID
+     * @param count  扣减数量
+     * @return 影响行数（0表示库存不足）
+     */
+    int decreaseStock(Long bookId, Integer count);
+
+    /**
+     * 增加库存
+     *
+     * @param bookId 图书ID
+     * @param count  增加数量
+     * @return 影响行数
+     */
+    int increaseStock(Long bookId, Integer count);
 
     /**
      * 转换为 VO（补充分类名称等关联信息）

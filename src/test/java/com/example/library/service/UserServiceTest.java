@@ -6,7 +6,7 @@ import com.example.library.common.result.ResultCode;
 import com.example.library.dto.LoginDTO;
 import com.example.library.dto.RegisterDTO;
 import com.example.library.entity.User;
-import com.example.library.mapper.UserMapper;
+import com.example.library.repository.UserRepository;
 import com.example.library.service.impl.UserServiceImpl;
 import com.example.library.util.JwtUtil;
 import com.example.library.vo.LoginVO;
@@ -38,7 +38,7 @@ import static org.mockito.Mockito.*;
 class UserServiceTest {
 
     @Mock
-    private UserMapper userMapper;
+    private UserRepository userRepository;
 
     @Mock
     private JwtUtil jwtUtil;
@@ -62,9 +62,6 @@ class UserServiceTest {
         // 注入 @Value 字段
         ReflectionTestUtils.setField(userService, "expiration", 86400000L);
         ReflectionTestUtils.setField(userService, "tokenPrefix", "Bearer ");
-
-        // 注入 ServiceImpl 基类的 baseMapper 字段（Mockito 不会自动注入父类字段）
-        ReflectionTestUtils.setField(userService, "baseMapper", userMapper);
     }
 
     @Test
@@ -75,7 +72,7 @@ class UserServiceTest {
         loginDTO.setUsername("testuser");
         loginDTO.setPassword("password123");
 
-        when(userMapper.selectOne(any(), anyBoolean())).thenReturn(testUser);
+        when(userRepository.getOne(any())).thenReturn(testUser);
         when(jwtUtil.generateToken(eq(1L), eq("testuser"), eq("USER")))
                 .thenReturn("mock-jwt-token");
 
@@ -91,7 +88,7 @@ class UserServiceTest {
         assertEquals("testuser", result.getUser().getUsername());
         assertEquals("测试用户", result.getUser().getNickname());
 
-        verify(userMapper, times(1)).selectOne(any(), anyBoolean());
+        verify(userRepository, times(1)).getOne(any());
         verify(jwtUtil, times(1)).generateToken(anyLong(), anyString(), anyString());
     }
 
@@ -103,7 +100,7 @@ class UserServiceTest {
         loginDTO.setUsername("nonexistent");
         loginDTO.setPassword("password123");
 
-        when(userMapper.selectOne(any(), anyBoolean())).thenReturn(null);
+        when(userRepository.getOne(any())).thenReturn(null);
 
         // When & Then
         BusinessException exception = assertThrows(BusinessException.class,
@@ -119,7 +116,7 @@ class UserServiceTest {
         loginDTO.setUsername("testuser");
         loginDTO.setPassword("wrongpassword");
 
-        when(userMapper.selectOne(any(), anyBoolean())).thenReturn(testUser);
+        when(userRepository.getOne(any())).thenReturn(testUser);
 
         // When & Then
         BusinessException exception = assertThrows(BusinessException.class,
@@ -136,7 +133,7 @@ class UserServiceTest {
         loginDTO.setUsername("testuser");
         loginDTO.setPassword("password123");
 
-        when(userMapper.selectOne(any(), anyBoolean())).thenReturn(testUser);
+        when(userRepository.getOne(any())).thenReturn(testUser);
 
         // When & Then
         BusinessException exception = assertThrows(BusinessException.class,
@@ -154,11 +151,11 @@ class UserServiceTest {
         registerDTO.setNickname("新用户");
         registerDTO.setEmail("new@example.com");
 
-        when(userMapper.selectOne(any(), anyBoolean())).thenReturn(null);
-        when(userMapper.insert(any(User.class))).thenAnswer(invocation -> {
+        when(userRepository.getOne(any())).thenReturn(null);
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
             User user = invocation.getArgument(0);
             user.setId(2L);
-            return 1;
+            return true;
         });
 
         // When
@@ -172,7 +169,7 @@ class UserServiceTest {
         assertEquals("USER", result.getRole());
         assertEquals(1, result.getStatus());
 
-        verify(userMapper, times(1)).insert(any(User.class));
+        verify(userRepository, times(1)).save(any(User.class));
     }
 
     @Test
@@ -183,20 +180,20 @@ class UserServiceTest {
         registerDTO.setUsername("testuser");
         registerDTO.setPassword("password123");
 
-        when(userMapper.selectOne(any(), anyBoolean())).thenReturn(testUser);
+        when(userRepository.getOne(any())).thenReturn(testUser);
 
         // When & Then
         BusinessException exception = assertThrows(BusinessException.class,
                 () -> userService.register(registerDTO));
         assertEquals(ResultCode.USERNAME_EXIST.getCode(), exception.getCode());
-        verify(userMapper, never()).insert(any());
+        verify(userRepository, never()).save(any());
     }
 
     @Test
     @DisplayName("根据用户名查询用户")
     void getByUsername_Success() {
         // Given
-        when(userMapper.selectOne(any(), anyBoolean())).thenReturn(testUser);
+        when(userRepository.getOne(any())).thenReturn(testUser);
 
         // When
         User result = userService.getByUsername("testuser");

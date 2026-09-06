@@ -1,13 +1,10 @@
 package com.example.library.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.library.common.exception.BusinessException;
 import com.example.library.common.result.ResultCode;
-import com.example.library.entity.Book;
 import com.example.library.entity.BookCategory;
-import com.example.library.mapper.BookCategoryMapper;
-import com.example.library.mapper.BookMapper;
+import com.example.library.repository.BookCategoryRepository;
 import com.example.library.service.BookCategoryService;
 import com.example.library.vo.CategoryVO;
 import lombok.RequiredArgsConstructor;
@@ -26,17 +23,16 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class BookCategoryServiceImpl extends ServiceImpl<BookCategoryMapper, BookCategory> implements BookCategoryService {
+public class BookCategoryServiceImpl implements BookCategoryService {
 
-    // 直接注入 BookMapper 而不是 BookService，避免循环依赖
-    private final BookMapper bookMapper;
+    private final BookCategoryRepository categoryRepository;
 
     @Override
     public List<CategoryVO> listAllCategories() {
         LambdaQueryWrapper<BookCategory> wrapper = new LambdaQueryWrapper<>();
         wrapper.orderByAsc(BookCategory::getSort)
                 .orderByAsc(BookCategory::getId);
-        List<BookCategory> categories = list(wrapper);
+        List<BookCategory> categories = categoryRepository.list(wrapper);
 
         return categories.stream()
                 .map(this::toVO)
@@ -53,7 +49,7 @@ public class BookCategoryServiceImpl extends ServiceImpl<BookCategoryMapper, Boo
             category.setSort(0);
         }
 
-        save(category);
+        categoryRepository.save(category);
         log.info("新增分类成功: categoryId={}, name={}", category.getId(), category.getName());
         return toVO(category);
     }
@@ -61,7 +57,7 @@ public class BookCategoryServiceImpl extends ServiceImpl<BookCategoryMapper, Boo
     @Override
     @Transactional(rollbackFor = Exception.class)
     public CategoryVO updateCategory(BookCategory category) {
-        BookCategory existing = getById(category.getId());
+        BookCategory existing = categoryRepository.getById(category.getId());
         if (existing == null) {
             throw new BusinessException(ResultCode.CATEGORY_NOT_FOUND);
         }
@@ -71,29 +67,27 @@ public class BookCategoryServiceImpl extends ServiceImpl<BookCategoryMapper, Boo
             validateNameUnique(category.getName(), category.getId());
         }
 
-        updateById(category);
+        categoryRepository.updateById(category);
         log.info("更新分类成功: categoryId={}", category.getId());
-        return toVO(getById(category.getId()));
+        return toVO(categoryRepository.getById(category.getId()));
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void deleteCategory(Long id) {
-        BookCategory category = getById(id);
+        BookCategory category = categoryRepository.getById(id);
         if (category == null) {
             throw new BusinessException(ResultCode.CATEGORY_NOT_FOUND);
         }
 
         // 检查该分类下是否有图书
-        LambdaQueryWrapper<Book> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Book::getCategoryId, id);
-        Long bookCount = bookMapper.selectCount(wrapper);
+        Long bookCount = categoryRepository.countByCategoryId(id);
         if (bookCount != null && bookCount > 0) {
             throw new BusinessException(ResultCode.PARAM_ERROR.getCode(),
                     "该分类下存在 " + bookCount + " 本图书，无法删除");
         }
 
-        removeById(id);
+        categoryRepository.removeById(id);
         log.info("删除分类成功: categoryId={}", id);
     }
 
@@ -106,9 +100,14 @@ public class BookCategoryServiceImpl extends ServiceImpl<BookCategoryMapper, Boo
         if (excludeId != null) {
             wrapper.ne(BookCategory::getId, excludeId);
         }
-        if (count(wrapper) > 0) {
+        if (categoryRepository.count(wrapper) > 0) {
             throw new BusinessException(ResultCode.CATEGORY_NAME_EXIST);
         }
+    }
+
+    @Override
+    public BookCategory getById(Long id) {
+        return categoryRepository.getById(id);
     }
 
     @Override
@@ -120,9 +119,7 @@ public class BookCategoryServiceImpl extends ServiceImpl<BookCategoryMapper, Boo
         BeanUtils.copyProperties(category, vo);
 
         // 统计该分类下的图书数量
-        LambdaQueryWrapper<Book> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Book::getCategoryId, category.getId());
-        Long count = bookMapper.selectCount(wrapper);
+        Long count = categoryRepository.countByCategoryId(category.getId());
         vo.setBookCount(count != null ? count.intValue() : 0);
 
         return vo;

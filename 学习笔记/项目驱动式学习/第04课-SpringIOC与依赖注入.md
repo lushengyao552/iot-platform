@@ -12,8 +12,9 @@
 @Slf4j
 @Service                                    // ← 这个注解
 @RequiredArgsConstructor
-public class BookServiceImpl extends ServiceImpl<BookMapper, Book> implements BookService {
+public class BookServiceImpl implements BookService {
 
+    private final BookRepository bookRepository;          // ← 依赖注入（组合 Repository）
     private final BookCategoryService categoryService;   // ← 依赖注入
     private final RedisService redisService;              // ← 依赖注入
 ```
@@ -91,10 +92,14 @@ public class BookController {
 BookController
     └── 依赖 BookService (接口)
          └── 实现类 BookServiceImpl
+              ├── 依赖 BookRepository (接口)  ← 组合，而非继承
               ├── 依赖 BookCategoryService
-              ├── 依赖 RedisService
-              └── 继承 ServiceImpl<BookMapper, Book>
-                   └── 依赖 BookMapper (MyBatis 代理对象)
+              └── 依赖 RedisService
+
+BookRepository (接口)
+    └── 实现类 BookRepositoryImpl
+         └── 继承 ServiceImpl<BookMapper, Book>
+              └── 依赖 BookMapper (MyBatis 代理对象)
 ```
 
 Spring 在启动时会把整个依赖链上的对象都创建好，按依赖顺序注入。
@@ -375,9 +380,10 @@ public class MyPrototypeBean {
 @Slf4j
 @Service                                    // 注册为 Service Bean（单例）
 @RequiredArgsConstructor                     // Lombok 生成构造器，用于构造器注入
-public class BookServiceImpl extends ServiceImpl<BookMapper, Book> implements BookService {
+public class BookServiceImpl implements BookService {
 
     // final 字段 = 必须通过构造器注入的依赖
+    private final BookRepository bookRepository;   // 组合：注入 Repository 接口
     private final BookCategoryService categoryService;
     private final RedisService redisService;
 

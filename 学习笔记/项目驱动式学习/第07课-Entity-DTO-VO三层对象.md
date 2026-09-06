@@ -31,7 +31,7 @@ public BookVO addBook(BookAddDTO addDTO) {          // ① 入参是 DTO
     Book book = new Book();                           // ② 中间用 Entity
     BeanUtils.copyProperties(addDTO, book);           //    DTO → Entity 拷贝
     book.setTotalStock(addDTO.getStock());
-    save(book);                                        //    Entity 存数据库
+    bookRepository.save(book);                         //    Entity 存数据库
 
     log.info("新增图书成功: bookId={}, title={}", book.getId(), book.getTitle());
     return toVO(book);                                 // ③ 返回是 VO（Entity → VO）
@@ -92,7 +92,7 @@ public class Book implements Serializable {
 Entity 用在 **Service 层和 Mapper 层**，是和数据库交互的对象：
 - Mapper 方法的参数和返回值是 Entity（`selectById` 返回 `Book`）
 - Service 内部业务逻辑用 Entity
-- `save(book)`、`updateById(book)` 这些 MyBatis-Plus 方法操作的是 Entity
+- `bookRepository.save(book)`、`bookRepository.updateById(book)` 这些 MyBatis-Plus 方法操作的是 Entity
 
 ### 为什么不能直接把 Entity 返回给前端？
 
@@ -408,7 +408,9 @@ public class BookController {
 // Service 层：DTO → Entity → 数据库 → Entity → VO
 @Service
 @RequiredArgsConstructor
-public class BookServiceImpl extends ServiceImpl<BookMapper, Book> implements BookService {
+public class BookServiceImpl implements BookService {
+
+    private final BookRepository bookRepository;         // 组合：注入 Repository
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -418,7 +420,7 @@ public class BookServiceImpl extends ServiceImpl<BookMapper, Book> implements Bo
         Book book = new Book();
         BeanUtils.copyProperties(addDTO, book);        // DTO → Entity 拷贝
         book.setTotalStock(addDTO.getStock());
-        save(book);                                      // Entity 存数据库
+        bookRepository.save(book);                       // Entity 存数据库
 
         return toVO(book);                               // Entity → VO
     }

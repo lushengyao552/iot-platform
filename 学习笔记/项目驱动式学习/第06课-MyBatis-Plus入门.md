@@ -167,21 +167,20 @@ MyBatis-Plus 通过这些注解，在运行时自动生成对应的 SQL。
 
 ---
 
-## 四、`ServiceImpl`——Service 层的通用实现
+## 四、`ServiceImpl`——Repository 层的通用实现
 
-看 `BookServiceImpl` 的类声明：
+看 `BookRepositoryImpl` 的类声明：
 
 ```java
-@Service
-@RequiredArgsConstructor
-public class BookServiceImpl extends ServiceImpl<BookMapper, Book> implements BookService {
+@Repository
+public class BookRepositoryImpl extends ServiceImpl<BookMapper, Book> implements BookRepository {
 ```
 
-`ServiceImpl<BookMapper, Book>` 是 MyBatis-Plus 提供的 Service 层通用实现类。两个泛型：
+`ServiceImpl<BookMapper, Book>` 是 MyBatis-Plus 提供的数据访问通用实现类。两个泛型：
 - 第一个 `BookMapper`：对应的 Mapper 接口
 - 第二个 `Book`：对应的实体类
 
-继承 `ServiceImpl` 后，`BookServiceImpl` 自动拥有了以下方法（内部调用 `baseMapper` 的方法）：
+继承 `ServiceImpl` 后，`BookRepositoryImpl` 自动拥有了以下方法（内部调用 `baseMapper` 的方法）：
 
 | 方法 | 内部调用 | 说明 |
 |------|---------|------|
@@ -196,34 +195,34 @@ public class BookServiceImpl extends ServiceImpl<BookMapper, Book> implements Bo
 | `page(page, wrapper)` | `baseMapper.selectPage(page, wrapper)` | 分页查询 |
 | `getBaseMapper()` | - | 获取底层的 Mapper |
 
-项目里的用法：
+项目里的用法（Service 层通过注入的 Repository 调用）：
 ```java
-// BookServiceImpl 里直接调用父类方法
-Book book = getById(1L);           // 等价于 baseMapper.selectById(1L)
-boolean success = save(book);       // 等价于 baseMapper.insert(book) > 0
-boolean updated = updateById(book); // 等价于 baseMapper.updateById(book) > 0
-IPage<Book> page = page(pageObj, wrapper);  // 分页查询
+// BookServiceImpl 里注入 BookRepository，调用其方法
+private final BookRepository bookRepository;
+
+Book book = bookRepository.getById(1L);            // 等价于 baseMapper.selectById(1L)
+boolean success = bookRepository.save(book);        // 等价于 baseMapper.insert(book) > 0
+boolean updated = bookRepository.updateById(book);  // 等价于 baseMapper.updateById(book) > 0
+IPage<Book> page = bookRepository.page(pageObj, wrapper);  // 分页查询
 ```
 
-### 为什么要继承 `ServiceImpl`？
+### 为什么 `ServiceImpl` 在 Repository 层而不是 Service 层？
 
-1. **减少重复代码**：每个 Service 都要写的 `getById`、`save`、`updateById` 等，父类已经封装好了
-2. **统一规范**：所有 Service 都有一致的方法名和行为
-3. **可以直接用 `baseMapper`**：父类里已经注入了 `BookMapper`，子类里直接用 `baseMapper.xxx()`
+1. **减少重复代码**：每个 Repository 都要写的 `getById`、`save`、`updateById` 等，父类已经封装好了
+2. **统一规范**：所有 Repository 都有一致的方法名和行为
+3. **职责单一**：`IService`/`ServiceImpl` 本质是「数据访问通用实现」，与业务无关。把它放到 Repository 层，Service 层通过**组合**（注入 Repository 接口）获得数据访问能力，保持业务逻辑纯粹
 
-### `BookService` 接口
+### `BookRepository` 接口
 
 ```java
-public interface BookService extends IService<Book> {
-    // 自定义业务方法
-    IPage<BookVO> pageBooks(BookQueryDTO queryDTO);
-    BookVO getBookById(Long id);
-    BookVO addBook(BookAddDTO addDTO);
-    // ...
+public interface BookRepository extends IService<Book> {
+    // 自定义数据访问方法
+    int decreaseStock(Long bookId, Integer count);
+    int increaseStock(Long bookId, Integer count);
 }
 ```
 
-`BookService extends IService<Book>`，`IService` 是 `ServiceImpl` 实现的接口。这样 Controller 里注入的是 `BookService` 接口，既可以调用通用方法（`getById`、`save`），也可以调用自定义方法（`pageBooks`）。
+`BookRepository extends IService<Book>`，`IService` 是 `ServiceImpl` 实现的接口。这样 Service 层注入 `BookRepository` 接口，既可以调用通用方法（`getById`、`save`），也可以调用自定义方法（`decreaseStock`、`increaseStock`）。
 
 ---
 
@@ -643,17 +642,19 @@ public interface BookMapper extends BaseMapper<Book> {
     int decreaseStock(@Param("bookId") Long bookId, @Param("count") Integer count);
 }
 
-// Service 层：继承 ServiceImpl，自动拥有通用业务方法
+// Service 层：组合注入 Repository，通过它获得数据访问能力
 @Service
 @RequiredArgsConstructor
-public class BookServiceImpl extends ServiceImpl<BookMapper, Book> implements BookService {
+public class BookServiceImpl implements BookService {
+
+    private final BookRepository bookRepository;  // 组合：注入 Repository 接口
 
     // 分页查询 + 动态条件
     @Override
     public IPage<BookVO> pageBooks(BookQueryDTO queryDTO) {
         Page<Book> page = new Page<>(queryDTO.getPageNum(), queryDTO.getPageSize());
         LambdaQueryWrapper<Book> wrapper = buildQueryWrapper(queryDTO);
-        IPage<Book> bookPage = page(page, wrapper);  // 父类方法，内部调 baseMapper.selectPage
+        IPage<Book> bookPage = bookRepository.page(page, wrapper);  // 调用 Repository 方法，内部调 baseMapper.selectPage
         return bookPage.convert(this::toVO);          // 结果转换
     }
 
@@ -746,7 +747,7 @@ MyBatis-Plus 是 MyBatis 的增强工具，在 MyBatis 基础上只做增强不�
 项目里大部分 SQL 不用写，是因为：
 1. Mapper 接口继承了 `BaseMapper<Book>`，MyBatis-Plus 提供了 insert、deleteById、updateById、selectById、selectList、selectCount、selectPage 等 17+ 个通用方法
 2. 这些方法在运行时根据实体类上的注解（`@TableName`、`@TableId`、`@TableField`、`@TableLogic`）自动生成对应的 SQL
-3. Service 层继承 `ServiceImpl<BookMapper, Book>`，又封装了 getById、save、updateById、page 等通用业务方法
+3. Repository 层继承 `ServiceImpl<BookMapper, Book>`，又封装了 getById、save、updateById、page 等通用数据访问方法，Service 层通过注入 Repository 调用
 4. 只有复杂操作（如原子扣减库存、多表 JOIN）才需要自己写自定义 SQL
 
 </details>

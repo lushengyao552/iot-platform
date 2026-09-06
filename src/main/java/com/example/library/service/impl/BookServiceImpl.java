@@ -3,7 +3,6 @@ package com.example.library.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.library.common.exception.BusinessException;
 import com.example.library.common.result.ResultCode;
 import com.example.library.dto.BookAddDTO;
@@ -11,7 +10,7 @@ import com.example.library.dto.BookQueryDTO;
 import com.example.library.dto.BookUpdateDTO;
 import com.example.library.entity.Book;
 import com.example.library.entity.BookCategory;
-import com.example.library.mapper.BookMapper;
+import com.example.library.repository.BookRepository;
 import com.example.library.service.BookCategoryService;
 import com.example.library.service.BookService;
 import com.example.library.util.RedisService;
@@ -43,8 +42,9 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class BookServiceImpl extends ServiceImpl<BookMapper, Book> implements BookService {
+public class BookServiceImpl implements BookService {
 
+    private final BookRepository bookRepository;
     private final BookCategoryService categoryService;
     private final RedisService redisService;
 
@@ -67,7 +67,7 @@ public class BookServiceImpl extends ServiceImpl<BookMapper, Book> implements Bo
         LambdaQueryWrapper<Book> wrapper = buildQueryWrapper(queryDTO);
 
         // 3. 执行分页查询
-        IPage<Book> bookPage = page(page, wrapper);
+        IPage<Book> bookPage = bookRepository.page(page, wrapper);
 
         // 4. 转换为 VO（补充分类名称）
         return bookPage.convert(this::toVO);
@@ -144,7 +144,7 @@ public class BookServiceImpl extends ServiceImpl<BookMapper, Book> implements Bo
         }
 
         // 2. 缓存未命中，查数据库
-        Book book = getById(id);
+        Book book = bookRepository.getById(id);
         if (book == null) {
             throw new BusinessException(ResultCode.BOOK_NOT_FOUND);
         }
@@ -176,7 +176,7 @@ public class BookServiceImpl extends ServiceImpl<BookMapper, Book> implements Bo
         // 1. 校验 ISBN 是否已存在
         LambdaQueryWrapper<Book> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Book::getIsbn, addDTO.getIsbn());
-        if (count(wrapper) > 0) {
+        if (bookRepository.count(wrapper) > 0) {
             throw new BusinessException(ResultCode.PARAM_ERROR.getCode(), "ISBN 已存在");
         }
 
@@ -192,7 +192,7 @@ public class BookServiceImpl extends ServiceImpl<BookMapper, Book> implements Bo
         Book book = new Book();
         BeanUtils.copyProperties(addDTO, book);
         book.setTotalStock(addDTO.getStock());  // 初始总藏书量 = 库存
-        save(book);
+        bookRepository.save(book);
 
         log.info("新增图书成功: bookId={}, title={}", book.getId(), book.getTitle());
         return toVO(book);
@@ -202,7 +202,7 @@ public class BookServiceImpl extends ServiceImpl<BookMapper, Book> implements Bo
     @Transactional(rollbackFor = Exception.class)
     public BookVO updateBook(Long id, BookUpdateDTO updateDTO) {
         // 1. 校验图书是否存在
-        Book existingBook = getById(id);
+        Book existingBook = bookRepository.getById(id);
         if (existingBook == null) {
             throw new BusinessException(ResultCode.BOOK_NOT_FOUND);
         }
@@ -228,7 +228,7 @@ public class BookServiceImpl extends ServiceImpl<BookMapper, Book> implements Bo
         }
 
         // 5. 执行更新
-        updateById(book);
+        bookRepository.updateById(book);
 
         // 6. 清除缓存（保证缓存一致性，下次查询时重新加载）
         evictBookCache(id);
@@ -240,17 +240,32 @@ public class BookServiceImpl extends ServiceImpl<BookMapper, Book> implements Bo
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void deleteBook(Long id) {
-        Book book = getById(id);
+        Book book = bookRepository.getById(id);
         if (book == null) {
             throw new BusinessException(ResultCode.BOOK_NOT_FOUND);
         }
         // 逻辑删除（MyBatis-Plus 自动处理 deleted 字段）
-        removeById(id);
+        bookRepository.removeById(id);
 
         // 清除缓存
         evictBookCache(id);
 
         log.info("删除图书成功: bookId={}", id);
+    }
+
+    @Override
+    public Book getById(Long id) {
+        return bookRepository.getById(id);
+    }
+
+    @Override
+    public int decreaseStock(Long bookId, Integer count) {
+        return bookRepository.decreaseStock(bookId, count);
+    }
+
+    @Override
+    public int increaseStock(Long bookId, Integer count) {
+        return bookRepository.increaseStock(bookId, count);
     }
 
     @Override

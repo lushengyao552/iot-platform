@@ -3,15 +3,13 @@ package com.example.library.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.library.common.exception.BusinessException;
 import com.example.library.common.result.ResultCode;
 import com.example.library.dto.NotificationMessage;
 import com.example.library.entity.Book;
 import com.example.library.entity.BorrowRecord;
 import com.example.library.entity.User;
-import com.example.library.mapper.BookMapper;
-import com.example.library.mapper.BorrowRecordMapper;
+import com.example.library.repository.BorrowRecordRepository;
 import com.example.library.service.BookService;
 import com.example.library.service.BorrowService;
 import com.example.library.service.UserService;
@@ -42,11 +40,11 @@ import java.time.temporal.ChronoUnit;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class BorrowServiceImpl extends ServiceImpl<BorrowRecordMapper, BorrowRecord> implements BorrowService {
+public class BorrowServiceImpl implements BorrowService {
 
+    private final BorrowRecordRepository borrowRecordRepository;
     private final BookService bookService;
     private final UserService userService;
-    private final BookMapper bookMapper;
     private final MessageProducer messageProducer;
     private final RedisService redisService;
 
@@ -103,19 +101,19 @@ public class BorrowServiceImpl extends ServiceImpl<BorrowRecordMapper, BorrowRec
         }
 
         // 3. 校验用户是否已借阅此书（未归还）
-        int existingCount = baseMapper.countByUserAndBook(userId, bookId);
+        int existingCount = borrowRecordRepository.countByUserAndBook(userId, bookId);
         if (existingCount > 0) {
             throw new BusinessException(ResultCode.BOOK_ALREADY_BORROWED);
         }
 
         // 4. 校验用户借阅数量是否达上限
-        int borrowingCount = baseMapper.countBorrowingByUserId(userId);
+        int borrowingCount = borrowRecordRepository.countBorrowingByUserId(userId);
         if (borrowingCount >= maxBorrowCount) {
             throw new BusinessException(ResultCode.BORROW_LIMIT_EXCEEDED);
         }
 
         // 5. 原子扣减库存（防止并发超卖）
-        int affectedRows = bookMapper.decreaseStock(bookId, 1);
+        int affectedRows = bookService.decreaseStock(bookId, 1);
         if (affectedRows == 0) {
             throw new BusinessException(ResultCode.BOOK_OUT_OF_STOCK);
         }
@@ -129,7 +127,7 @@ public class BorrowServiceImpl extends ServiceImpl<BorrowRecordMapper, BorrowRec
         record.setDueDate(today.plusDays(maxBorrowDays));
         record.setStatus("BORROWED");
         record.setFine(BigDecimal.ZERO);
-        save(record);
+        borrowRecordRepository.save(record);
 
         log.info("借阅成功: userId={}, bookId={}, recordId={}, dueDate={}",
                 userId, bookId, record.getId(), record.getDueDate());
@@ -147,7 +145,7 @@ public class BorrowServiceImpl extends ServiceImpl<BorrowRecordMapper, BorrowRec
     @Transactional(rollbackFor = Exception.class)
     public BorrowRecordVO returnBook(Long recordId) {
         // 1. 校验借阅记录是否存在
-        BorrowRecord record = getById(recordId);
+        BorrowRecord record = borrowRecordRepository.getById(recordId);
         if (record == null) {
             throw new BusinessException(ResultCode.BORROW_RECORD_NOT_FOUND);
         }
@@ -167,13 +165,13 @@ public class BorrowServiceImpl extends ServiceImpl<BorrowRecordMapper, BorrowRec
         }
 
         // 4. 原子增加库存
-        bookMapper.increaseStock(record.getBookId(), 1);
+        bookService.increaseStock(record.getBookId(), 1);
 
         // 5. 更新借阅记录
         record.setReturnDate(today);
         record.setStatus("RETURNED");
         record.setFine(fine);
-        updateById(record);
+        borrowRecordRepository.updateById(record);
 
         log.info("归还成功: recordId={}, bookId={}, fine={}", recordId, record.getBookId(), fine);
 
@@ -197,7 +195,7 @@ public class BorrowServiceImpl extends ServiceImpl<BorrowRecordMapper, BorrowRec
         }
         wrapper.orderByDesc(BorrowRecord::getCreateTime);
 
-        IPage<BorrowRecord> recordPage = page(page, wrapper);
+        IPage<BorrowRecord> recordPage = borrowRecordRepository.page(page, wrapper);
         return recordPage.convert(this::toVO);
     }
 
@@ -211,8 +209,13 @@ public class BorrowServiceImpl extends ServiceImpl<BorrowRecordMapper, BorrowRec
         }
         wrapper.orderByDesc(BorrowRecord::getCreateTime);
 
-        IPage<BorrowRecord> recordPage = page(page, wrapper);
+        IPage<BorrowRecord> recordPage = borrowRecordRepository.page(page, wrapper);
         return recordPage.convert(this::toVO);
+    }
+
+    @Override
+    public BorrowRecord getById(Long id) {
+        return borrowRecordRepository.getById(id);
     }
 
     @Override

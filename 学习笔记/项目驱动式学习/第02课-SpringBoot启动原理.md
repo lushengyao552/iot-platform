@@ -244,10 +244,12 @@ public class WebMvcAutoConfiguration {
 
 ```java
 @Service
-public class BookServiceImpl extends ServiceImpl<BookMapper, Book> implements BookService {
-    // 父类 ServiceImpl 里已经注入了 baseMapper（即 BookMapper 的代理对象）
-    // 你也可以自己注入：
-    // private final BookMapper bookMapper;
+@RequiredArgsConstructor
+public class BookServiceImpl implements BookService {
+    // Service 层组合注入 Repository（不再继承 ServiceImpl）
+    private final BookRepository bookRepository;
+    // Repository 实现类 BookRepositoryImpl 继承 ServiceImpl<BookMapper, Book>，
+    // 其父类 ServiceImpl 里已经注入了 baseMapper（即 BookMapper 的代理对象）
 }
 ```
 

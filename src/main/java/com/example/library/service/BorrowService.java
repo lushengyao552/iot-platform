@@ -1,14 +1,13 @@
 package com.example.library.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.service.IService;
 import com.example.library.entity.BorrowRecord;
 import com.example.library.vo.BorrowRecordVO;
 
 /**
  * 借阅服务接口
  */
-public interface BorrowService extends IService<BorrowRecord> {
+public interface BorrowService {
 
     /**
      * 借阅图书
@@ -47,6 +46,14 @@ public interface BorrowService extends IService<BorrowRecord> {
      * @return 分页结果
      */
     IPage<BorrowRecordVO> pageAllBorrowRecords(String status, Integer pageNum, Integer pageSize);
+
+    /**
+     * 根据ID查询借阅记录实体（供控制器调用）
+     *
+     * @param id 借阅记录ID
+     * @return 借阅记录实体
+     */
+    BorrowRecord getById(Long id);
 
     /**
      * 转换为 VO（补充用户名、书名等关联信息）

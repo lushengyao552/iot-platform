@@ -30,15 +30,15 @@ private BorrowRecordVO doBorrowBook(Long userId, Long bookId) {
     // ...
 
     // 3. 校验是否已借阅
-    int existingCount = baseMapper.countByUserAndBook(userId, bookId);
+    int existingCount = borrowRecordRepository.countByUserAndBook(userId, bookId);
     // ...
 
     // 4. 校验借阅数量
-    int borrowingCount = baseMapper.countBorrowingByUserId(userId);
+    int borrowingCount = borrowRecordRepository.countBorrowingByUserId(userId);
     // ...
 
     // 5. 原子扣减库存（SQL: UPDATE book SET stock = stock - 1 WHERE id = ? AND stock >= 1）
-    int affectedRows = bookMapper.decreaseStock(bookId, 1);
+    int affectedRows = bookService.decreaseStock(bookId, 1);
     if (affectedRows == 0) {
         throw new BusinessException(ResultCode.BOOK_OUT_OF_STOCK);
     }
@@ -46,7 +46,7 @@ private BorrowRecordVO doBorrowBook(Long userId, Long bookId) {
     // 6. 创建借阅记录（INSERT INTO borrow_record ...）
     BorrowRecord record = new BorrowRecord();
     // ...
-    save(record);
+    borrowRecordRepository.save(record);
 
     // 7. 发送 MQ 通知（异步，不影响事务）
     sendBorrowNotification(user, book, record);
@@ -470,7 +470,7 @@ private BorrowRecordVO doBorrowBook(Long userId, Long bookId) {
 
     // 操作2：创建借阅记录（INSERT INTO borrow_record ...）
     BorrowRecord record = new BorrowRecord();
-    save(record);
+    borrowRecordRepository.save(record);
 
     // 如果操作2失败抛异常，操作1的扣库存也会回滚 → 保证数据一致性
     return toVO(record);
@@ -483,10 +483,10 @@ private BorrowRecordVO doBorrowBook(Long userId, Long bookId) {
 
 ### 练习1：验证事务回滚
 
-在 `doBorrowBook` 方法的 `save(record)` 之后，故意加一行抛异常：
+在 `doBorrowBook` 方法的 `borrowRecordRepository.save(record)` 之后，故意加一行抛异常：
 
 ```java
-save(record);
+borrowRecordRepository.save(record);
 throw new RuntimeException("故意抛异常，测试回滚");
 ```
 
@@ -503,8 +503,8 @@ throw new RuntimeException("故意抛异常，测试回滚");
 
 ```java
 try {
-    int affectedRows = bookMapper.decreaseStock(bookId, 1);
-    save(record);
+    int affectedRows = bookService.decreaseStock(bookId, 1);
+    borrowRecordRepository.save(record);
     throw new RuntimeException("测试");
 } catch (Exception e) {
     e.printStackTrace();  // 异常被吞了

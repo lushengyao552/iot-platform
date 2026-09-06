@@ -730,7 +730,7 @@ BookList 页面加载图书列表的流程：
 3. **loadBooks 执行**：
    - `setLoading(true)` → 表格显示 loading 动画
    - 调用 `pageBooks({ keyword, categoryId, pageNum, pageSize })` → 内部通过 Axios 发送 `GET /api/books?pageNum=1&pageSize=10` 请求到后端
-   - 后端 Spring Boot 接收请求 → JwtInterceptor 验证 Token → BookController.pageBooks → BookServiceImpl.pageBooks → BookMapper 查 MySQL → 返回 Result<IPage<BookVO>>
+   - 后端 Spring Boot 接收请求 → JwtInterceptor 验证 Token → BookController.pageBooks → BookServiceImpl.pageBooks → BookRepository.page → BookMapper 查 MySQL → 返回 Result<IPage<BookVO>>
    - 前端 Axios 响应拦截器处理响应，返回数据
    - `setBooks(res.data.records)` 更新图书列表
    - `setTotal(res.data.total)` 更新总记录数
