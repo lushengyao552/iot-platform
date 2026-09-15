@@ -1,45 +1,42 @@
 package com.example.library.common.result;
-
-import lombok.Data;
-
 import java.io.Serializable;
 
-/**
- * 统一响应结果封装
- *
- * <p>所有 Controller 接口返回值统一使用此类型，保证前后端交互格式一致。
- *
- * <p>标准响应结构：
- * <pre>
- * {
- *   "code": 20000,
- *   "message": "操作成功",
- *   "data": { ... }
- * }
- * </pre>
- *
- * @param <T> 响应数据类型
- */
-@Data
+// 代码要求
+import lombok.Data;
+
+// **字段**：`Integer code`、`String message`、`T data`、`Long timestamp`
+
+// **类注解**：`@Data`，`implements Serializable`，加 `serialVersionUID`
+
+// **私有构造器**：构造时自动设 `timestamp = System.currentTimeMillis()`
+
+// **静态方法**：
+
+// | 方法签名 | 逻辑 |
+// |----------|------|
+// | `static <T> Result<T> success()` | new Result(20000, "操作成功", null) |
+// | `static <T> Result<T> success(T data)` | new Result(20000, "操作成功", data) |
+// | `static <T> Result<T> success(String message, T data)` | new Result(20000, message, data) |
+// | `static <T> Result<T> error()` | new Result(50000, "系统内部错误", null) |
+// | `static <T> Result<T> error(String message)` | new Result(50000, message, null) |
+// | `static <T> Result<T> error(ResultCode rc)` | new Result(rc.getCode(), rc.getMessage(), null) |
+// | `static <T> Result<T> error(Integer code, String message)` | new Result(code, message, null) |
+// | `boolean isSuccess()` | code != null && code == 20000 |
+// 几个问题要改：
+
+// 1. **类声明不对**：`private class Result` → 应该是 `public class Result<T> implements Serializable`（泛型类要在类名后加 `<T>`，而且是 public）
+// 2. **私有构造器没写**：你直接 `new Result<>(...)`，但没有定义构造器，编译会报错
+// 3. **timestamp 没赋值**：构造器里要写 `this.timestamp = System.currentTimeMillis()`
+// 4. **注释删掉**，不要把题目注释留在代码里
+
+// 改完重新贴。
+@Data 
 public class Result<T> implements Serializable {
-
     private static final long serialVersionUID = 1L;
-
-    /** 响应状态码 */
     private Integer code;
-
-    /** 响应提示信息 */
     private String message;
-
-    /** 响应数据 */
     private T data;
-
-    /** 时间戳 */
     private Long timestamp;
-
-    private Result() {
-        this.timestamp = System.currentTimeMillis();
-    }
 
     private Result(Integer code, String message, T data) {
         this.code = code;
@@ -48,65 +45,30 @@ public class Result<T> implements Serializable {
         this.timestamp = System.currentTimeMillis();
     }
 
-    // ========== 成功响应 ==========
-
-    /**
-     * 成功响应（无数据）
-     */
     public static <T> Result<T> success() {
-        return new Result<>(ResultCode.SUCCESS.getCode(), ResultCode.SUCCESS.getMessage(), null);
-    }
+        return new Result<>(20000, "操作成功", null);
 
-    /**
-     * 成功响应（带数据）
-     */
+    }
     public static <T> Result<T> success(T data) {
-        return new Result<>(ResultCode.SUCCESS.getCode(), ResultCode.SUCCESS.getMessage(), data);
+        return new Result<>(20000, "操作成功", data);
     }
-
-    /**
-     * 成功响应（自定义消息 + 数据）
-     */
     public static <T> Result<T> success(String message, T data) {
-        return new Result<>(ResultCode.SUCCESS.getCode(), message, data);
+        return new Result<>(20000, message, data);
     }
-
-    // ========== 失败响应 ==========
-
-    /**
-     * 失败响应（使用默认错误码）
-     */
     public static <T> Result<T> error() {
-        return new Result<>(ResultCode.ERROR.getCode(), ResultCode.ERROR.getMessage(), null);
+        return new Result<>(50000, "系统内部错误", null);
     }
-
-    /**
-     * 失败响应（自定义错误消息）
-     */
     public static <T> Result<T> error(String message) {
-        return new Result<>(ResultCode.ERROR.getCode(), message, null);
+        return new Result<>(50000, message, null);
     }
-
-    /**
-     * 失败响应（使用指定状态码枚举）
-     */
-    public static <T> Result<T> error(ResultCode resultCode) {
-        return new Result<>(resultCode.getCode(), resultCode.getMessage(), null);
+    public static <T> Result<T> error(ResultCode rc) {
+        return new Result<>(rc.getCode(), rc.getMessage(), null);
     }
-
-    /**
-     * 失败响应（自定义状态码 + 消息）
-     */
     public static <T> Result<T> error(Integer code, String message) {
         return new Result<>(code, message, null);
     }
-
-    // ========== 便捷判断 ==========
-
-    /**
-     * 判断是否成功
-     */
     public boolean isSuccess() {
-        return ResultCode.SUCCESS.getCode().equals(this.code);
+        return code != null && code == 20000;
     }
+
 }

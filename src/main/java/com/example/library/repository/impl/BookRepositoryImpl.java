@@ -6,11 +6,6 @@ import com.example.library.mapper.BookMapper;
 import com.example.library.repository.BookRepository;
 import org.springframework.stereotype.Repository;
 
-/**
- * 图书数据仓库实现类
- *
- * <p>封装图书相关的数据访问操作，内部调用 Mapper 完成数据库交互。
- */
 @Repository
 public class BookRepositoryImpl extends ServiceImpl<BookMapper, Book> implements BookRepository {
 

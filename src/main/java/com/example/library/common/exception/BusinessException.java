@@ -1,50 +1,47 @@
 package com.example.library.common.exception;
+// 题 1.3 BusinessException
 
-import com.example.library.common.result.ResultCode;
 import lombok.Getter;
+import com.example.library.common.result.ResultCode;
+// **文件**：`common/exception/BusinessException.java`
 
-/**
- * 业务异常类
- *
- * <p>用于在业务逻辑中抛出可预期的异常，由全局异常处理器统一捕获并返回标准响应。
- * 与系统异常（如 NullPointerException）不同，业务异常是正常业务流程中的错误情况。
- *
- * <p>使用示例：
- * <pre>
- * if (user == null) {
- *     throw new BusinessException(ResultCode.USERNAME_NOT_FOUND);
- * }
- * </pre>
- */
-@Getter
+// ### 前置"为什么"
+// > **为什么业务异常要继承 RuntimeException 而不是 Exception？**
+// > 提示：如果继承 Exception，方法签名上要加什么？调用方会被迫做什么？
+
+// ### 代码要求
+
+// ```java
+// // 继承 RuntimeException
+// // 加 @Getter
+// // 字段：private final Integer code;
+
+// // 构造器1：BusinessException(ResultCode rc)
+// //   super(rc.getMessage()); this.code = rc.getCode();
+
+// // 构造器2：BusinessException(Integer code, String message)
+// //   super(message); this.code = code;
+
+// // 构造器3：BusinessException(String message)
+// //   super(message); this.code = ResultCode.ERROR.getCode();
+// ```
+@Getter 
 public class BusinessException extends RuntimeException {
-
-    private static final long serialVersionUID = 1L;
-
-    /** 错误状态码 */
     private final Integer code;
 
-    /**
-     * 使用状态码枚举构造异常
-     */
-    public BusinessException(ResultCode resultCode) {
-        super(resultCode.getMessage());
-        this.code = resultCode.getCode();
+    public BusinessException(ResultCode rc) {
+        super(rc.getMessage());
+        this.code = rc.getCode();
     }
 
-    /**
-     * 使用自定义状态码和消息构造异常
-     */
     public BusinessException(Integer code, String message) {
         super(message);
         this.code = code;
     }
 
-    /**
-     * 使用自定义消息构造异常（默认错误码 50000）
-     */
     public BusinessException(String message) {
         super(message);
         this.code = ResultCode.ERROR.getCode();
     }
+    
 }

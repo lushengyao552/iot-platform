@@ -6,11 +6,6 @@ import com.example.library.mapper.BorrowRecordMapper;
 import com.example.library.repository.BorrowRecordRepository;
 import org.springframework.stereotype.Repository;
 
-/**
- * 借阅记录数据仓库实现类
- *
- * <p>封装借阅记录相关的数据访问操作，内部调用 Mapper 完成数据库交互。
- */
 @Repository
 public class BorrowRecordRepositoryImpl extends ServiceImpl<BorrowRecordMapper, BorrowRecord> implements BorrowRecordRepository {
 

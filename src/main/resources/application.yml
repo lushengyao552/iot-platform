@@ -1,7 +1,3 @@
-# ============================================================
-# 图书管理系统 - 应用配置文件
-# ============================================================
-
 server:
   port: 8080
   servlet:
@@ -15,7 +11,6 @@ spring:
   application:
     name: library-management
 
-  # ========== 数据源配置 ==========
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/library_db?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
@@ -24,74 +19,47 @@ spring:
     hikari:
       maximum-pool-size: 10
       minimum-idle: 5
-      connection-timeout: 30000
-      idle-timeout: 600000
-      max-lifetime: 1800000
 
-  # ========== Jackson 序列化配置 ==========
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: Asia/Shanghai
     default-property-inclusion: non_null
 
-  # ========== 文件上传配置 ==========
-  servlet:
-    multipart:
-      max-file-size: 10MB
-      max-request-size: 10MB
-
-  # ========== RabbitMQ 消息队列配置 ==========
   rabbitmq:
     host: localhost
     port: 5672
     username: guest
     password: guest
     virtual-host: /
-    # 消息确认机制：生产者确认消息是否到达 Exchange
     publisher-confirm-type: correlated
-    # 消息返回机制：消息无法路由到 Queue 时返回给生产者
     publisher-returns: true
     listener:
       simple:
-        # 消费者手动确认模式（acknowledge-mode: manual）
-        # 也可设为 auto（自动确认），手动确认更安全，可防止消息丢失
         acknowledge-mode: manual
-        # 每次从队列预取的消息数量（限流，防止消费者被压垮）
         prefetch: 5
-        # 重试机制：消费失败后自动重试
-        retry:
-          enabled: true
-          max-attempts: 3
-          initial-interval: 1000
-          multiplier: 2
 
-  # ========== Redis 缓存配置 ==========
   data:
     redis:
       host: localhost
       port: 6379
-      # Redis 密码（无密码则留空）
       password:
-      # 数据库索引（0-15，默认0）
       database: 0
-      # 连接超时
-      connect-timeout: 5000ms
-      # 读取超时
-      timeout: 3000ms
       lettuce:
         pool:
-          # 连接池最大连接数
           max-active: 16
-          # 连接池最大空闲连接数
           max-idle: 8
-          # 连接池最小空闲连接数
           min-idle: 2
-          # 获取连接最大等待时间
-          max-wait: 3000ms
 
-# ============================================================
-# MyBatis-Plus 配置
-# ============================================================
+  ai:
+    openai:
+      api-key: ${AI_API_KEY:}
+      base-url: ${AI_BASE_URL:https://api.openai.com}
+      chat:
+        options:
+          model: ${AI_MODEL:gpt-4o-mini}
+          temperature: 0.7
+          max-tokens: 2048
+
 mybatis-plus:
   mapper-locations: classpath:mapper/**/*.xml
   type-aliases-package: com.example.library.entity
@@ -105,61 +73,23 @@ mybatis-plus:
       logic-delete-value: 1
       logic-not-delete-value: 0
 
-# ============================================================
-# 日志配置
-# ============================================================
 logging:
   level:
     root: INFO
     com.example.library: DEBUG
-    com.example.library.mapper: DEBUG
-    org.springframework.web: INFO
-    org.springframework.security: INFO
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n"
 
-# ============================================================
-# 自定义业务配置
-# ============================================================
 library:
-  # JWT 配置
   jwt:
-    # 密钥（生产环境请使用环境变量注入，不要硬编码）
     secret: library-management-secret-key-2024-please-change-in-production
-    # Token 过期时间（毫秒），默认 24 小时
     expiration: 86400000
-    # Token 请求头名称
     header: Authorization
-    # Token 前缀
     prefix: "Bearer "
-
-  # 借阅配置
   borrow:
-    # 最大借阅天数
     max-days: 30
-    # 每人最大借阅数量
     max-count: 5
 
-# ============================================================
-# Knife4j 接口文档配置
-# ============================================================
 knife4j:
   enable: true
   setting:
     language: zh_cn
-    enable-version: true
-    enable-search: true
-    enable-footer: false
   production: false
-
-springdoc:
-  swagger-ui:
-    path: /swagger-ui.html
-    tags-sorter: alpha
-    operations-sorter: alpha
-  api-docs:
-    path: /v3/api-docs
-  group-configs:
-    - group: 'default'
-      paths-to-match: '/**'
-      packages-to-scan: com.example.library.controller
