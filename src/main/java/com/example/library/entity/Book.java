@@ -1,35 +1,15 @@
 package com.example.library.entity;
-// **文件**：`entity/Book.java`，表 `book`
-import com.baomidou.mybatisplus.annotation.TableName;
+
+import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
+
 import java.io.Serializable;
-import java.time.LocalDateTime;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableLogic;
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.FieldFill;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-// | 字段 | 类型 |
-// |------|------|
-// | id | Long (@TableId AUTO) |
-// | isbn | String |
-// | title | String |
-// | author | String |
-// | publisher | String |
-// | publishDate | LocalDate |
-// | categoryId | Long |
-// | price | BigDecimal |
-// | stock | Integer |
-// | totalStock | Integer |
-// | description | String |
-// | coverUrl | String |
-// | createTime | LocalDateTime (INSERT) |
-// | updateTime | LocalDateTime (INSERT_UPDATE) |
-// | deleted | Integer (@TableLogic) |
-@Data 
-@TableName ("book")
+import java.time.LocalDateTime;
+
+@Data
+@TableName("book")
 public class Book implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -46,10 +26,13 @@ public class Book implements Serializable {
     private Integer totalStock;
     private String description;
     private String coverUrl;
+
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
+
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
+
     @TableLogic
     private Integer deleted;
 }

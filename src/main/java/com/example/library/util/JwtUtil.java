@@ -30,11 +30,11 @@ public class JwtUtil {
         Date expiryDate = new Date(now.getTime() + expiration);
 
         return Jwts.builder()
-                .subject(username)
+                .setSubject(username)
                 .claim("userId", userId)
                 .claim("role", role)
-                .issuedAt(now)
-                .expiration(expiryDate)
+                .setIssuedAt(now)
+                .setExpiration(expiryDate)
                 .signWith(getSigningKey())
                 .compact();
     }
@@ -50,21 +50,6 @@ public class JwtUtil {
             log.warn("解析token失败: {}", e.getMessage());
             return null;
         }
-    }
-
-    public Long getUserIdFromToken(String token) {
-        Claims claims = getClaimsFromToken(token);
-        return claims == null ? null : claims.get("userId", Long.class);
-    }
-
-    public String getUsernameFromToken(String token) {
-        Claims claims = getClaimsFromToken(token);
-        return claims == null ? null : claims.getSubject();
-    }
-
-    public String getRoleFromToken(String token) {
-        Claims claims = getClaimsFromToken(token);
-        return claims == null ? null : claims.get("role", String.class);
     }
 
     public boolean validateToken(String token) {
